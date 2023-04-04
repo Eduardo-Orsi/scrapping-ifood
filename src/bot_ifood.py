@@ -31,7 +31,7 @@ class BotIFood:
     def mine_price_data(self, data_table_name:str) -> None:
 
         logging.basicConfig(filename=f'Logs/Log bot iFood - {self.start_time.strftime("%d.%m.%Y-%H.%M.%S")}.log', level=logging.INFO, format="%(asctime)s | %(message)s")
-        logging.info(f'WEBSCRAPPING INCIADO: {self.start_time.strftime("%d.%m.%Y-%H.%M.%S")}')
+        logging.info(f'WEBSCRAPPING START: {self.start_time.strftime("%d.%m.%Y-%H.%M.%S")}')
         
         if not self.db_conn:
             return None
@@ -47,34 +47,34 @@ class BotIFood:
                 time.sleep(7)
 
                 restaurant_name = self.driver.find_element(By.CLASS_NAME, 'merchant-info__title').text
-                precos = self.driver.find_elements(By.CLASS_NAME, 'dish-card__price')
-                descricaos = self.driver.find_elements(By.CLASS_NAME, 'dish-card__description')
+                prices = self.driver.find_elements(By.CLASS_NAME, 'dish-card__price')
+                descreptions = self.driver.find_elements(By.CLASS_NAME, 'dish-card__description')
 
-                price_list = [preco.text for preco in precos]
-                product_list = [descricao.text for descricao in descricaos]
+                price_list = [price.text for price in prices]
+                product_list = [descreption.text for descreption in descreptions]
 
-                dicionario = {
+                scrapped_data = {
                     "restaurant": restaurant_name,
                     "product": product_list,
                     "price": price_list,
                     "date_colected": self.start_time.strftime("%d/%m/%Y %H:%M")
                 }
 
-                df = pd.DataFrame(dicionario)
+                df = pd.DataFrame(scrapped_data)
                 self.df_to_sql(df=df, data_table_name=data_table_name)
 
-                logging.info(f'SCRAPPING FINALIZADO SITE: {row["Link iFood"]}')
+                logging.info(f'SCRAPPING SITE DONE: {row["Link iFood"]}')
 
                 self.clean_all_chrome_data()
             
             except Exception as es:
-                logging.critical(f'PROBLEMA NO SCRAPPING DO SITE: {row["Link iFood"]} - {es}')
+                logging.critical(f'SCRAPPING SITE PROBLEM: {row["Link iFood"]} - {es}')
                 self.clean_all_chrome_data()
 
         self.db_conn.commit()
         self.db_conn.close()
-        logging.info(f'WEBSCRAPPING FINALIZADO!')
-        logging.info(f'TEMPO DE EXECUÇÃO: {datetime.now() - self.start_time}')
+        logging.info(f'WEBSCRAPPING DONE!')
+        logging.info(f'EXECUTION TIME: {datetime.now() - self.start_time}')
         self.driver.close()
 
     def get_merchant_sales(self, token:str) -> None:
@@ -85,12 +85,12 @@ class BotIFood:
             HEADER_BASE["authorization"] = f"Bearer {token}"
             response = requests.post(url=ORDER_URL, headers=HEADER_BASE, data=body)
             if not response or response.status_code != 200:
-                print(f"ERRO NO REQUEST {self.from_date} to {self.to_date}: {response.json()}")
+                print(f"REQUEST ERROR {self.from_date} to {self.to_date}: {response.json()}")
                 continue
             
             response = response.json()
             if not response["data"]["orders"]["groups"]:
-                print(f"TERMINOU: {self.from_date} to {self.to_date}")
+                print(f"FINISHED: {self.from_date} to {self.to_date}")
                 break
             
             with open(f"json_order/json_response_{self.from_date.strftime('%Y-%m-%d')}_to_{self.to_date.strftime('%Y-%m-%d')}.json", "w") as f:
@@ -101,7 +101,7 @@ class BotIFood:
 
             self.to_date -= relativedelta(months=1)
             self.from_date -= relativedelta(months=1)
-        print("Terminou!")
+        print("FINISHED!")
 
     def extract_data(self, group:dict) -> None:
 
@@ -112,7 +112,7 @@ class BotIFood:
             body = self.build_body(self.from_date, self.to_date, 0, True, order["id"])
             order = requests.post(url=ORDER_INFO_URL, headers=HEADER_BASE, data=body)
             if not order or order.status_code != 200:
-                print(f"ERRO NO REQUEST {self.from_date} to {self.to_date}: {order.json()}")
+                print(f"REQUEST ERROR {self.from_date} to {self.to_date}: {order.json()}")
                 continue
             order = order.json()
             if not order:
@@ -156,7 +156,7 @@ class BotIFood:
                 c.close()
                 self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR SUB ITEMS: {es}")
+            print(f"ERROR TO SAVE SUB ITEMS: {es}")
 
     def get_sub_items(self, sub_items:list[dict], id_item:str) -> list[tuple]:
         try:
@@ -176,7 +176,7 @@ class BotIFood:
                 sub_item_list.append(data)
             return sub_item_list
         except Exception as es:
-            print(f"ERRO AO PEGAR OS SUB ITEMS: {es}")
+            print(f"ERROR TO GET SUB ITEMS: {es}")
 
     def save_items(self, items_list:list[tuple]) -> None:
         try:
@@ -186,7 +186,7 @@ class BotIFood:
                 c.close()
                 self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR OS ITEMS: {es}")
+            print(f"ERROR TO SAVE ITEMS: {es}")
 
     def get_items_and_subitems(self, items:list[dict], id_order:str) -> list[tuple]:
         try:
@@ -213,7 +213,7 @@ class BotIFood:
                 sub_items_list.extend(self.get_sub_items(item["subItems"], id))
             return [items_list, sub_items_list]
         except Exception as es:
-            print(f"ERRO AO PEGAR OS ITEMS: {es}")
+            print(f"ERROR TO GET ITEMS: {es}")
 
     def save_campaign(self, campaigns_list:list[tuple]) -> None:
         try:
@@ -223,7 +223,7 @@ class BotIFood:
                 c.close()
                 self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR A CAMPANHA: {es}")
+            print(f"ERROR TO SAVE CAMPANHA: {es}")
 
     def get_campaign(self, campaigns:dict, id_order:str) -> list[tuple]:
         try:
@@ -250,7 +250,7 @@ class BotIFood:
             campaigns_list.append(data)
             return campaigns_list
         except Exception as es:
-            print(f"ERRO AO PEGAR A CAMPANHA: {es}")
+            print(f"ERROR TO GET CAMPANHA: {es}")
 
     def save_fees(self, fees_list:list[tuple]) -> None:
         try:
@@ -260,7 +260,7 @@ class BotIFood:
                 c.close()
                 self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR FEES: {es}")
+            print(f"ERROR TO SAVE FEES: {es}")
 
     def get_fees(self, fees:dict, id_order:str) -> list[tuple]:
         try:
@@ -278,7 +278,7 @@ class BotIFood:
                 fees_list.append(data)
             return fees_list
         except Exception as es:
-            print(f"ERRO AO PEGAR OS FEES: {es}")
+            print(f"ERROR TO GET FEES: {es}")
 
     def save_order(self, order:tuple) -> str:
         try:
@@ -294,11 +294,10 @@ class BotIFood:
             self.db_conn.commit()
             return order[0]
         except Exception as es:
-            print(f"ERRO AO SALVAR O ORDER: {es}")
+            print(f"ERROR TO SAVE ORDER: {es}")
 
     def get_order(self, order:dict, restaurant_id:str, day_sales_id:str, costumer_id:str, paymant_id:str, delivery_id:str, channel_id:str) -> tuple:
         try:
-            # print(order)
             benefits = order.get("benefits", None)
             if not benefits:
                 total_benefits = 0.0
@@ -363,7 +362,7 @@ class BotIFood:
             ) 
             return data
         except Exception as es:
-            print(f"ERRO AO PEGAR ORDER: {es}")
+            print(f"ERROR TO GET ORDER: {es}")
             return ()
 
     def save_sale_channel(self, sale_channel_data:tuple) -> str:
@@ -381,7 +380,7 @@ class BotIFood:
             c.close()
             return result[0]
         except Exception as es:
-            print(f"ERRO AO SALAR O SALE CHANNEL: {es}")
+            print(f"ERROR TO SAVE SALE CHANNEL: {es}")
 
     def get_sale_channel(self, sale_channel:dict) -> tuple:
         try:
@@ -393,7 +392,7 @@ class BotIFood:
             )
             return data
         except Exception as es:
-            print(f"ERRO AO PEGAR O SALE CHANNEL: {es}")
+            print(f"ERROR TO GET SALE CHANNEL: {es}")
             return ()
 
     def save_delivery_method(self, delivery_method_data:tuple) -> str:
@@ -404,7 +403,7 @@ class BotIFood:
             self.db_conn.commit()
             return delivery_method_data[0]
         except Exception as es:
-            print(f"ERRO AO SALVAR O DELIVERY METHOD: {es}")
+            print(f"ERROR TO SAVE DELIVERY METHOD: {es}")
             
     def get_delivery_method(self, delivery_method:dict) -> tuple:
         try:
@@ -420,7 +419,7 @@ class BotIFood:
             )
             return data
         except Exception as es:
-            print(f"ERRO AO PEGAR O DELIVERY METHOD: {es}")
+            print(f"ERROR TO GET DELIVERY METHOD: {es}")
             return ()
 
     def save_paymant_method(self, paymant_data:tuple) -> str:
@@ -432,7 +431,7 @@ class BotIFood:
             self.db_conn.commit()
             return paymant_data[0]
         except Exception as es:
-            print(f"ERRO AO SALVAR O PAYMANT METHOD: {es}")
+            print(f"ERROR TO SAVE PAYMANT METHOD: {es}")
             return paymant_data[0]
 
     def get_paymant_method(self, list_paymant_method:dict) -> list[tuple]:
@@ -450,7 +449,7 @@ class BotIFood:
                 list_paymants_method.append(data)
             return list_paymants_method
         except Exception as es:
-            print(f"ERRO AO PEGAR O PAYMANT METHOD: {es}")
+            print(f"ERROT TO GET PAYMANT METHOD: {es}")
             return ()
             
     def save_customer(self, customer_data:tuple) -> None:
@@ -460,7 +459,7 @@ class BotIFood:
             c.close()
             self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR O CUSTOMER: {es}")
+            print(f"ERROR TO SAVE CUSTOMER: {es}")
 
     def get_customer(self, customer:dict) -> tuple:
         club = customer.get("samsClubAccountStatus", None)
@@ -485,7 +484,7 @@ class BotIFood:
             )
             return data
         except Exception as es:
-            print(f"ERRO AO PEGAR DAY SALES: {self.from_date} to {self.to_date}")
+            print(f"ERROR TO GET DAY SALES: {self.from_date} to {self.to_date}")
             return ()
 
     def save_day_sales(self, day_sales_data:tuple) -> None:
@@ -495,7 +494,7 @@ class BotIFood:
             c.close()
             self.db_conn.commit()
         except Exception as es:
-            print(f"ERRO AO SALVAR O DAY SALES: {es}")
+            print(f"ERROR TO SAVE DAY SALES: {es}")
 
     def build_body(self, from_date:datetime, to_date:datetime, size:int, is_order_info:bool, order_id:str = "") -> str:
         body = {}
@@ -528,7 +527,7 @@ class BotIFood:
             df_links = pd.read_csv('src/links.csv')
             return df_links
         except Exception as es:
-            logging.critical(f'NÃO FOI POSSÍVEL ABRIR O EXCEL DE LINKS: {es}')
+            logging.critical(f'ERROR TO OPEN LINKS CSV FILE: {es}')
             return None
 
     def __conect_to_db(self) -> Union[db.Connection, None]:
@@ -536,7 +535,7 @@ class BotIFood:
             conn = db.connect(self.db_name)
             return conn
         except Exception as es:
-            logging.critical(f'NÃO FOI POSSÍVEL CONECTAR COM O BANCO DE DADOS: {es}')
+            logging.critical(f'ERRO TO CONECT TO THE DATABASE: {es}')
             return None
 
     def __get_db_cursor(self) -> Union[db.Cursor, None]:
@@ -544,7 +543,7 @@ class BotIFood:
             cursor = self.db_conn.cursor()
             return cursor
         except Exception as es:
-            logging.critical(f'NÃO FOI POSSÍVEL PEGAR O CURSOR DO BANCO DE DADOS: {es}')
+            logging.critical(f'ERRO TO GET THE DB CURSOR: {es}')
             return None
 
     def df_to_sql(self, df:pd.DataFrame, data_table_name:str) -> bool:
@@ -553,7 +552,7 @@ class BotIFood:
             self.db_conn.commit()
             return True
         except Exception as es:
-            logging.critical(f'NÃO FOI POSSÍVEL SALVAR NO BANCO DE DADOS: {es}')
+            logging.critical(f'ERROR TO SAVE IN THE DATABASE: {es}')
             return False
 
     @staticmethod
