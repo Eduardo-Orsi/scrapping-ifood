@@ -523,14 +523,10 @@ class BotIFood:
         self.driver.execute_script('window.localStorage.clear();')
         self.driver.execute_script('window.sessionStorage.clear();')
 
-    def save_data(self, sql_query:str, data_tuple:tuple) -> bool:
-        pass
-
     def get_ifood_links(self) -> Union[pd.DataFrame, None]:
         try:
-            df_links = pd.read_excel('links.xlsx')
+            df_links = pd.read_csv('src/links.csv')
             return df_links
-            
         except Exception as es:
             logging.critical(f'NÃO FOI POSSÍVEL ABRIR O EXCEL DE LINKS: {es}')
             return None
@@ -566,9 +562,9 @@ class BotIFood:
 
 if __name__ == "__main__":
 
-    # bot = BotIFood(MINING_DB, need_selenium=True)
-    # bot.mine_price_data(data_table_name="raw_data")
+    bot = BotIFood(TEST_DB, need_selenium=True)
+    bot.mine_price_data(data_table_name="raw_data")
 
-    bot = BotIFood(TEST_DB, need_selenium=False)
-    bot.get_merchant_sales(token="Seu token vai aqui")
+    # bot = BotIFood(TEST_DB, need_selenium=False)
+    # bot.get_merchant_sales(token="Seu token vai aqui")
 
